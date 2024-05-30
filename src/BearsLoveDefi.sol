@@ -113,6 +113,7 @@ contract BearsLoveDefi is Ownable {
         memeToken.transfer(msg.sender, claimAmount);
     }
 
+    // For testing purposes so ETH doesn't get stuck
     function withdraw() public onlyOwner {
         payable(owner()).transfer(address(this).balance);
     }

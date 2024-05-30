@@ -121,4 +121,9 @@ contract BearsLoveMemes is ERC20, Ownable {
         payable(msg.sender).transfer(refundAmount);
         emit BearsLoveMemes_TokensBurned(msg.sender, amount, refundAmount);
     }
+
+    // For testing purposes so ETH doesn't get stuck
+    function withdraw() public onlyOwner {
+        payable(owner()).transfer(address(this).balance);
+    }
 }

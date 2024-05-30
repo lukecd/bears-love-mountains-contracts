@@ -12,3 +12,27 @@ docs/
 
 # Dotenv file
 .env
+
+# Node modules (if you're using any npm packages)
+node_modules/
+
+# DS_Store (macOS specific)
+.DS_Store
+
+# Log files
+*.log
+
+# Coverage reports
+coverage/
+*.lcov
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Foundry artifacts
+artifacts/

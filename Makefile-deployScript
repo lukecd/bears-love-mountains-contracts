@@ -1,0 +1,33 @@
+# Define variables
+CONTRACT_NAME=BearsLoveMountains
+#NETWORK_URL=https://artio.rpc.berachain.com/
+#CHAIN_ID=80085
+NETWORK_URL=https://rpc.sepolia.org
+CHAIN_ID=11155111
+
+# Compile contracts
+compile:
+	forge build
+
+# Deploy contracts
+deploy:
+	source .env && BROADCAST=true forge script script/DeployAll.s.sol:DeployAll --rpc-url $(NETWORK_URL) --broadcast --etherscan-api-key $$EXPLORER_API_KEY --chain-id $(CHAIN_ID)
+
+simulate-deploy:
+	source .env && BROADCAST=false forge script script/DeployAll.s.sol:DeployAll --rpc-url $(NETWORK_URL) --chain-id $(CHAIN_ID)
+
+# Verify contracts
+verify:
+	source .env && forge verify-contract --chain-id $(CHAIN_ID) --private-key $$PRIVATE_KEY --rpc-url $(NETWORK_URL) --block-explorer-url https://artio.beratrail.io/ $(CONTRACT_NAME) $(CONTRACT_ADDRESS)
+
+# Run tests
+test:
+	forge test
+
+# Clean up build artifacts
+clean:
+	rm -rf out
+	rm -rf cache
+
+# Default target
+all: compile test deploy verify

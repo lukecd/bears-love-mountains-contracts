@@ -12,19 +12,26 @@ contract DeployAll is Script {
         external
         returns (BearsLoveMountains, BearsLoveMemes, BearsLoveDefi)
     {
-        // vm.startBroadcast();
+        bool broadcast = vm.envBool("BROADCAST");
+        broadcast = true;
+        if (broadcast) {
+            vm.startBroadcast();
+        }
 
+        // Deploy BearsLoveMemes contract
         BearsLoveMemes memeToken = new BearsLoveMemes(
             "Bears Love Memes",
             "BMEME"
         );
 
+        // Deploy BearsLoveDefi contract
         BearsLoveDefi defiContract = new BearsLoveDefi(
             address(memeToken),
             address(0), // Temporary placeholder for mountains contract
             0.69 ether // Threshold for buying meme tokens
         );
 
+        // Deploy BearsLoveMountains contract
         BearsLoveMountains mountainsToken = new BearsLoveMountains(
             "Bears Love Mountains",
             "MNTN",
@@ -40,7 +47,9 @@ contract DeployAll is Script {
         defiContract.transferOwnership(msg.sender);
         mountainsToken.transferOwnership(msg.sender);
 
-        // vm.stopBroadcast();
+        if (broadcast) {
+            vm.stopBroadcast();
+        }
 
         return (mountainsToken, memeToken, defiContract);
     }

@@ -1,44 +1,43 @@
--include .env
+# Define variables
+NETWORK_URL=https://rpc.sepolia.org
+CHAIN_ID=11155111
 
-.PHONY: all test clean deploy fund help install snapshot format anvil 
+# Compile contracts
+compile:
+	forge build
 
-DEFAULT_ANVIL_KEY := 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+# Deploy BearsLoveMemes
+deploy-bl:
+	source .env && forge create src/BearsLoveMemes.sol:BearsLoveMemes --rpc-url $(NETWORK_URL) --private-key $$PRIVATE_KEY --constructor-args "Bears Love Memes" "BMEME"
 
-help:
-	@echo "Usage:"
-	@echo "  make deploy [ARGS=...]\n    example: make deploy ARGS=\"--network sepolia\""
-	@echo ""
-	@echo "  make fund [ARGS=...]\n    example: make deploy ARGS=\"--network sepolia\""
+# Deploy BearsLoveDefi (requires BearsLoveMemes address)
+deploy-bd:
+	source .env && forge create src/BearsLoveDefi.sol:BearsLoveDefi --rpc-url $(NETWORK_URL) --private-key $$PRIVATE_KEY --constructor-args $$MEME_CONTRACT_ADDRESS "0x0000000000000000000000000000000000000000" "0.69 ether"
 
-all: clean remove install update build
+# Deploy BearsLoveMountains (requires BearsLoveDefi address)
+deploy-bm:
+	source .env && forge create src/BearsLoveMountains.sol:BearsLoveMountains --rpc-url $(NETWORK_URL) --private-key $$PRIVATE_KEY --constructor-args "Bears Love Mountains" "MNTN" "0.001 ether" $$DEFI_CONTRACT_ADDRESS
 
-# Clean the repo
-clean  :; forge clean
+# Set the NFT contract in the DeFi contract
+set-nft-contract:
+	source .env && forge script script/SetNftContract.s.sol:SetNftContract --rpc-url $(NETWORK_URL) --broadcast --etherscan-api-key $$EXPLORER_API_KEY --chain-id $(CHAIN_ID)
 
-# Remove modules
-remove :; rm -rf .gitmodules && rm -rf .git/modules/* && rm -rf lib && touch .gitmodules && git add . && git commit -m "modules"
+# Verify BearsLoveMemes
+verify-bl:
+	source .env && forge verify-contract --chain-id $(CHAIN_ID) --constructor-args $(cast abi-encode "constructor(string,string)" "Bears Love Memes" "BMEME") --etherscan-api-key $$EXPLORER_API_KEY $$MEME_CONTRACT_ADDRESS src/BearsLoveMemes.sol:BearsLoveMemes
 
-install :; forge install Cyfrin/foundry-devops@0.0.11 --no-commit --no-commit && forge install foundry-rs/forge-std@v1.5.3 --no-commit && forge install openzeppelin/openzeppelin-contracts@v4.8.3 --no-commit
+# Verify BearsLoveDefi
+verify-bd:
+	source .env && forge verify-contract --chain-id $(CHAIN_ID) --constructor-args $(cast abi-encode "constructor(address,address,uint256)" $$MEME_CONTRACT_ADDRESS "0x0000000000000000000000000000000000000000" "0.69 ether") --etherscan-api-key $$EXPLORER_API_KEY $$DEFI_CONTRACT_ADDRESS src/BearsLoveDefi.sol:BearsLoveDefi
 
-# Update Dependencies
-update:; forge update
+# Verify BearsLoveMountains
+verify-bm:
+	source .env && forge verify-contract --chain-id $(CHAIN_ID) --constructor-args $(cast abi-encode "constructor(string,string,uint256,address)" "Bears Love Mountains" "MNTN" "0.001 ether" $$DEFI_CONTRACT_ADDRESS) --etherscan-api-key $$EXPLORER_API_KEY $$BM_CONTRACT_ADDRESS src/BearsLoveMountains.sol:BearsLoveMountains
 
-build:; forge build
+# Clean up build artifacts
+clean:
+	rm -rf out
+	rm -rf cache
 
-test :; forge test 
-
-snapshot :; forge snapshot
-
-format :; forge fmt
-
-anvil :; anvil -m 'test test test test test test test test test test test junk' --steps-tracing --block-time 1
-
-NETWORK_ARGS := --rpc-url http://localhost:8545 --private-key $(DEFAULT_ANVIL_KEY) --broadcast
-
-ifeq ($(findstring --network sepolia,$(ARGS)),--network sepolia)
-	NETWORK_ARGS := --rpc-url $(SEPOLIA_RPC_URL) --private-key $(PRIVATE_KEY) --broadcast --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv
-endif
-
-deploy:
-	@forge script script/DeployOurToken.s.sol:DeployOurToken $(NETWORK_ARGS)
-
+# Default target
+all: compile deploy-bl deploy-bd deploy-bm set-nft-contract verify-bl verify-bd verify-bm
